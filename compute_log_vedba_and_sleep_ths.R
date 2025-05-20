@@ -73,10 +73,32 @@ select_thresholds_on_hist <- function(x, breaks = 100) {
     cat(sprintf("Threshold th%d = %.3f\n", i, xval))
   }
   
+  dev.off()
   cat("Final thresholds:\n")
   print(thresholds)
   return(thresholds)
 }
+
+# --------------------------------------------------------------------
+#' Round POSIXct timestamps to the nearest sampling interval
+#'
+#' @param timestamps A vector of POSIXct timestamps
+#' @param sampling_rate Numeric, in Hz (e.g., 20 means 20 samples per second)
+#' @return A vector of rounded POSIXct timestamps
+#' @author Your Name
+round_to_nearest_sample <- function(timestamps, sampling_rate) {
+  # Compute the interval length in seconds (e.g., 0.05 for 20 Hz)
+  interval <- 1 / sampling_rate
+  
+  # Convert to numeric (seconds), round, then convert back to POSIXct
+  rounded <- as.POSIXct(
+    round(as.numeric(timestamps) / interval) * interval,
+    origin = "1970-01-01", tz = "UTC"
+  )
+  
+  return(rounded)
+}
+
 
 # ----------------------------------------------------------
 # Read and prepare acceleration data (.parquet file)
@@ -84,103 +106,63 @@ select_thresholds_on_hist <- function(x, breaks = 100) {
 # ----------------------------------------------------------
 
 # Define the full path to the main Parquet folder
-parquet_path <- "//10.126.19.90/EAS_shared/cross_sleep/working/Data/Acc/spidermonkey/"
+parquet_directory <- "//10.126.19.90/EAS_shared/cross_sleep/working/Data/Acc/"
+metadata_directory <- "//10.126.19.90/EAS_shared/cross_sleep/working/Data/cross_sleep_metadata.csv"
 
-# Filename (e.g., "spidermonkey_1_Albus.parquet")
-parquet_filename <- "spidermonkey_1_Albus.parquet"
 
-# Read the file
-df <- read_parquet(parquet_path)
+file_list <- list.files(
+  path = parquet_directory,
+  pattern = "\\.parquet$",   # match files ending in .parquet
+  recursive = TRUE,
+  full.names = TRUE
+)
 
-# Convert to data.table for fast, memory-efficient operations
-setDT(df)
 
-# Ensure the Timestamp column is POSIXct (datetime)
-if (!inherits(df$Timestamp, "POSIXt")) {
-  df$Timestamp <- as.POSIXct(df$Timestamp, tz = "UTC")
-}
+metadata <- read.csv(metadata_directory,colClasses = "character")
 
-# Retrieve ID
-# Remove ".parquet" manually
-filename_core <- sub("\\.parquet$", "", parquet_filename)
-# Split by underscores
-parts <- strsplit(filename_core, "_")[[1]]
-# Assign to variables
-species <- parts[1]
-deployment_ID <- parts[2]
-individual_ID <- parts[3]
+# Filenames (e.g., "spidermonkey_1_Albus.parquet")
 
-# ----------------------------------------------------------
-# Step 1: Determine sampling rate (Hz)
-# ----------------------------------------------------------
-time_diffs <- diff(as.numeric(df$Timestamp))
-sampling_rate <- round(1 / median(time_diffs, na.rm = TRUE))
-print(sampling_rate)
-
-# ----------------------------------------------------------
-# Step 2: Check how many rows fall exactly on the second
-# ----------------------------------------------------------
-is_exact_second <- df$Timestamp == floor_date(df$Timestamp, unit = "second")
-cat("Samples on exact seconds: ", sum(is_exact_second), "\n")
-cat("Unique seconds: ", length(unique(floor_date(df$Timestamp, unit = "second"))), "\n")
-
-# ----------------------------------------------------------
-# Step 3: Compute 1-second VeDBA (no post-smoothing)
-# ----------------------------------------------------------
-
-# Axes to process
-present_axes <- c("X", "Y", "Z")
-rolling_mean_width <- sampling_rate  # For example, 20 for 20 Hz
-
-# (a) Compute static acceleration columns:
-#     For each axis (X, Y, etc.), we do a rolling mean with width = rolling_mean_width = 1s.
-df[,(paste0(present_axes, "_static")) := lapply(present_axes, function(axis) {
-    frollmean(
-      get(axis),               # <-- the raw acceleration column "X", "Y", etc.
-      n = rolling_mean_width,  
-      align = "center",
-      na.rm = FALSE)
-  })]
-
-# (b) Compute dynamic acceleration columns:
-#     Subtract the static from the raw signal, axis by axis.
-df[,(paste0(present_axes, "_dynamic")) := Map(
-    function(raw, stc) raw - stc,
-    lapply(present_axes, function(axis) get(axis)),
-    .SD), # .SD refers to the newly created static columns in the same row subset
-  .SDcols = paste0(present_axes, "_static")]
-
-# (c) Compute VeDBA (based on dynamic columns just created):
-#     VeDBA = sqrt(X_dyn^2 + Y_dyn^2 + Z_dyn^2).
-df[,VeDBA := sqrt(Reduce(`+`, lapply(.SD, function(d) d^2)) # sums them, producing a single vector of “X^2 + Y^2 + Z^2”
-  ),.SDcols = paste0(present_axes, "_dynamic")]
-
-# (d) Remove temporary static and dynamic columns
-df <- df[, !c(paste0(present_axes, "_static"), paste0(present_axes, "_dynamic")), with = FALSE]
-
-# ----------------------------------------------------------
-# Step 4: Downsample to 1 Hz (based on exact-second timestamps)
-# ----------------------------------------------------------
-df_1s <- df[df$Timestamp == floor_date(df$Timestamp, unit = "second")]
-cat("Downsampling ratio (raw/1s): ", nrow(df) / nrow(df_1s), "\n")
-
-# Can also simply use
-# df_1s <- downsample_data_table(df, original_rate = sampling_rate, target_rate = 1)
-
-# Log-transform the VeDBA
-df_1s[, log_VeDBA := log(VeDBA)]
-
-# ----------------------------------------------------------
-# Step 5: Interactive threshold selection on histogram
-# ----------------------------------------------------------
-thresholds <- select_thresholds_on_hist(df_1s$log_VeDBA)
-print(thresholds)
-
-thresholds <- as.data.frame(as.list(thresholds))
-thresholds <- thresholds %>%
-  mutate(
-    species = species,
-    deployment_ID = deployment_ID,
-    individual_ID = individual_ID
+for (i in 1:length(file_list)){
+  print(i)
+  print(paste0("Processing ", file_list[i]))
+  result <- compute_vedba_1s_and_select_sleep_threshold(file_list[i])
+  
+  # Check if the row exists in metadata and then add the selected th
+  exists <- any(
+    metadata$species == result$thresholds$species & 
+      metadata$individual_ID == result$thresholds$individual_ID &
+      metadata$deployment_ID == result$thresholds$deployment_ID
   )
-print(thresholds)
+  
+  if (exists) {
+    metadata <- metadata %>%
+      mutate(across(everything(), ~ .)) %>%  # noop, keeps metadata a tibble
+      rows_update(result$thresholds, by = c("species", "deployment_ID", "individual_ID"))
+  } else {
+    metadata <- bind_rows(metadata, result$thresholds)
+  }
+  
+
+}
+print(metadata)
+#write the updated metadata
+
+# Today's date
+{date_suffix <- format(Sys.Date(), "%Y-%m-%d")
+
+# New path with date inserted
+new_metadata_path <- sub(
+  pattern = "\\.csv$",
+  replacement = paste0("_", date_suffix, ".csv"),
+  x = metadata_directory
+)
+
+# Prompt user for confirmation
+cat("Are you sure you want to write metadata to:\n", new_metadata_path, "\n"); response <- readline(prompt = "Type 'yes' to confirm: ")
+
+if (tolower(response) == "yes") {
+  write.csv(metadata, new_metadata_path, row.names = FALSE)
+  cat("✅ Metadata successfully written to:\n", new_metadata_path, "\n")
+} else {
+  cat("❌ Operation cancelled. Metadata not written.\n")
+}}
