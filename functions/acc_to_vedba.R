@@ -1,5 +1,5 @@
 #Calculate VeDBA from standardized ACC data
-acc_to_vedba <- function(df, rolling_mean_width, max_frac_na){
+acc_to_vedba <- function(df, rolling_mean_width){
   
   present_axes <- c("X", "Y", "Z")
   
@@ -29,7 +29,7 @@ acc_to_vedba <- function(df, rolling_mean_width, max_frac_na){
   #cat("Downsampling ratio (raw/1s):", nrow(df) / nrow(df_1s), "\n")
 
   #get only relevant columns and standardize naming
-  df <- df[c('Timestamp_adj','VeDBA','fracNA')]
+  df <- df[,c('Timestamp_adj','VeDBA','fracNA')]
   colnames(df) <- c('Timestamp','VeDBA','fracNA')
   
   return(df)
