@@ -8,4 +8,4 @@ df <- read_parquet(parquet_file)
 
 df_stand <- standardize_acc_to_uniform_sampling(df)
 
-out <- acc_to_vedba(df_stand, rolling_mean_width = 20)
+df_vedba <- acc_to_vedba(df_stand, rolling_mean_width = 20)
