@@ -18,9 +18,8 @@ outdir <- '~/EAS_shared/cross_sleep/working/Data/'
 codedir <- '~/EAS_ind/astrandburg/code/'
 
 #Burst params
-burst_interval <- 60 #burst interval in seconds 
+burst_intervals <- c(60,180,3600)
 burst_length <- 2 #burst length in seconds
-
 
 # Required libraries
 library(arrow)
@@ -101,7 +100,7 @@ files <- list.files(rawdir, recursive = T, pattern = '.parquet$', full.names = T
 basenames <- gsub('[.]parquet','',basename(files))
 
 #loop over files and generate + save all data
-for(i in 1:2){
+for(i in 1){
   print(paste('Running all processing on file',i))
   print(paste('File path =', files[i]))
   df <- read_parquet(files[i])
@@ -161,6 +160,9 @@ for(i in 1:2){
   
   # 7) Pseudo undersample (burst lengths and inter-intervals) and regenerate vedba
   print('Generating vedba for burst sampled data')
-  savename_burst <- paste0(outdir,'VeDBA_burst/',basenames[i],'_vedba_burst_int',burst_interval,'_len',burst_length,'.parquet')
-  run_and_save_burst_data(filename = savename_standard, savename = savename_burst, burst_interval, burst_length, acc_sample_rate = sampling_rate)
+  for(j in 1:length(burst_intervals)){
+    print(paste('Burst interval =', burst_intervals[j]))
+    savename_burst <- paste0(outdir,'VeDBA_burst/',basenames[i],'_vedba_burst_int',burst_intervals[j],'_len',burst_length,'.parquet')
+  run_and_save_burst_data(filename = savename_standard, savename = savename_burst, burst_intervals[j], burst_length, acc_sample_rate = sampling_rate)
+  }
 }
