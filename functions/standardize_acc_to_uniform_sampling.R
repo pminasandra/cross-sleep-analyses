@@ -65,5 +65,9 @@ standardize_acc_to_uniform_sampling <- function(df){
   #put back in df
   df <- df_filled
   
-  return(df)
+  out <- list()
+  out$df <- df
+  out$sampling_rate <- sampling_rate
+  
+  return(out)
 }
