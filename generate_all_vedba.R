@@ -18,7 +18,7 @@ outdir <- '~/EAS_shared/cross_sleep/working/Data/'
 codedir <- '~/EAS_ind/astrandburg/code/'
 
 #Burst params
-burst_intervals <- c(60,180,3600)
+burst_intervals <- c(4, 10, 30, 60, 2*60, 5*60, 10*60, 15*60)
 burst_length <- 2 #burst length in seconds
 
 # Required libraries
@@ -100,7 +100,7 @@ files <- list.files(rawdir, recursive = T, pattern = '.parquet$', full.names = T
 basenames <- gsub('[.]parquet','',basename(files))
 
 #loop over files and generate + save all data
-for(i in 1){
+for(i in 2:length(files)){
   print(paste('Running all processing on file',i))
   print(paste('File path =', files[i]))
   df <- read_parquet(files[i])
