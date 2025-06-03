@@ -19,6 +19,7 @@ codedir <- '~/EAS_ind/astrandburg/code/'
 
 #Burst params
 burst_intervals <- c(4, 10, 30, 60, 2*60, 5*60, 10*60, 15*60)
+burst_intervals <- c(60)
 burst_length <- 2 #burst length in seconds
 
 # Required libraries
@@ -50,7 +51,7 @@ run_and_save_burst_data <- function(filename, savename, burst_interval, burst_le
   df_burst = subset(df_burst, is.na(df_burst$Burst_ID) != TRUE)
   # Compute VeDBA per burst ID 
   df_burst <- as.data.table(df_burst) # Make data.table
-  df_burst = acc_to_vedba(df_burst, rolling_mean_width = rolling_width, group_col = "Burst_ID")
+  df_burst = acc_to_vedba(df_burst, rolling_mean_width = rolling_width*sampling_rate, group_col = "Burst_ID")
   
   # Optional - remove VeDBA values if fracNA >= 50 % #Arbitrary!
   # Identify non-POSIXct columns (i.e., not Timestamp)
@@ -100,7 +101,8 @@ files <- list.files(rawdir, recursive = T, pattern = '.parquet$', full.names = T
 basenames <- gsub('[.]parquet','',basename(files))
 
 #loop over files and generate + save all data
-for(i in 2:length(files)){
+#for(i in 2:length(files)){
+for(i in 5){
   print(paste('Running all processing on file',i))
   print(paste('File path =', files[i]))
   df <- read_parquet(files[i])
@@ -163,6 +165,6 @@ for(i in 2:length(files)){
   for(j in 1:length(burst_intervals)){
     print(paste('Burst interval =', burst_intervals[j]))
     savename_burst <- paste0(outdir,'VeDBA_burst/',basenames[i],'_vedba_burst_int',burst_intervals[j],'_len',burst_length,'.parquet')
-  run_and_save_burst_data(filename = savename_standard, savename = savename_burst, burst_intervals[j], burst_length, acc_sample_rate = sampling_rate)
+    run_and_save_burst_data(filename = savename_standard, savename = savename_burst, burst_intervals[j], burst_length, acc_sample_rate = sampling_rate)
   }
 }
