@@ -18,7 +18,7 @@ outdir <- '~/EAS_shared/cross_sleep/working/Data/'
 codedir <- '~/EAS_ind/astrandburg/code/'
 
 #Burst params
-burst_intervals <- c(4, 10, 30, 60, 2*60, 5*60, 10*60, 15*60)
+burst_intervals <- c(4, 10, 30, 60, 2*60, 5*60, 10*60, 15*60) # Burst intervals in seconds
 burst_length <- 2 #burst length in seconds
 
 # Required libraries
@@ -100,13 +100,26 @@ files <- list.files(rawdir, recursive = T, pattern = '.parquet$', full.names = T
 basenames <- gsub('[.]parquet','',basename(files))
 
 #loop over files and generate + save all data
-for(i in 2:length(files)){
+for(i in 1:length(files)){
   print(paste('Running all processing on file',i))
   print(paste('File path =', files[i]))
   df <- read_parquet(files[i])
   
   df <- as.data.table(df) # Make data.table
   df[, Timestamp := as.POSIXct(Timestamp, format = "%Y-%m-%d %H:%M:%OS", tz = "UTC")] # Ensure UTC for consistency 
+  
+  # 0) ===== QC Check 1: Skip if total time < 24 hrs =====
+  duration_hrs <- difftime(max(df$Timestamp, na.rm = TRUE), min(df$Timestamp, na.rm = TRUE), units = "hours")
+  if (duration_hrs < 24) {
+    warning(paste("Skipping file", files[i], "- Duration < 24 hrs:", round(as.numeric(duration_hrs), 2), "hrs"))
+    next
+  }
+  # 0) ===== QC Check 2: Replace X, Y, Z == 0 with NA =====
+  if (all(c("X", "Y", "Z") %in% names(df))) {
+    zero_rows <- (df$X == 0 & df$Y == 0 & df$Z == 0)
+    df[zero_rows, c("X", "Y", "Z") := NA]
+    cat(paste("Replaced", sum(zero_rows), "rows with (X, Y, Z) = 0 with NA.\n"))
+  }
   
   # 1)  Standardize acc to uniform_sampling - standardizing the time series to a uniform sampling grid with NA for missing records
   out = standardize_acc_to_uniform_sampling(df)
@@ -152,7 +165,7 @@ for(i in 2:length(files)){
   ]
   
   # 6) Export median VeDBA per second - continous file
-  colnames(df_Ved_1Hz) <- c("Timestamp", "vedba", "log_vedba")
+  colnames(df_Ved_1Hz) <- c("timestamp", "vedba", "logvedba")
   savename_vedba_standard <- paste0(outdir,'VeDBA_cont/',basenames[i],'_VeDBA_standard.parquet')
   write_parquet(df_Ved_1Hz, savename_vedba_standard)
   
