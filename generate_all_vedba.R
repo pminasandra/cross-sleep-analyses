@@ -100,7 +100,7 @@ files <- list.files(rawdir, recursive = T, pattern = '.parquet$', full.names = T
 basenames <- gsub('[.]parquet','',basename(files))
 
 #loop over files and generate + save all data
-for(i in 26:length(files)){
+for(i in 1:length(files)){
   print(paste('Running all processing on file',i))
   print(paste('File path =', files[i]))
   df <- read_parquet(files[i])
