@@ -166,7 +166,7 @@ for(i in 1:length(files)){
   
   # 6) Export median VeDBA per second - continous file
   colnames(df_Ved_1Hz) <- c("timestamp", "vedba", "logvedba")
-  savename_vedba_standard <- paste0(outdir,'VeDBA_cont/',basenames[i],'_vedba_standard.parquet')
+  savename_vedba_standard <- paste0(outdir,'VeDBA/',basenames[i],'_vedba_standard.parquet')
   write_parquet(df_Ved_1Hz, savename_vedba_standard)
   
   #####################################################################################################################################
@@ -175,7 +175,7 @@ for(i in 1:length(files)){
   print('Generating vedba for burst sampled data')
   for(j in 1:length(burst_intervals)){
     print(paste('Burst interval =', burst_intervals[j]))
-    savename_burst <- paste0(outdir,'VeDBA_burst/',basenames[i],'_vedba_burst_int',burst_intervals[j],'_len',burst_length,'.parquet')
+    savename_burst <- paste0(outdir,'VeDBA/',basenames[i],'_vedba_burst_int',burst_intervals[j],'_len',burst_length,'.parquet')
     run_and_save_burst_data(filename = savename_standard, savename = savename_burst, burst_intervals[j], burst_length, acc_sample_rate = sampling_rate)
   }
 }
