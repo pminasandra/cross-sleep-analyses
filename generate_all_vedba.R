@@ -100,7 +100,7 @@ files <- list.files(rawdir, recursive = T, pattern = '.parquet$', full.names = T
 basenames <- gsub('[.]parquet','',basename(files))
 
 #loop over files and generate + save all data
-for(i in 1:length(files)){
+for(i in 26:length(files)){
   print(paste('Running all processing on file',i))
   print(paste('File path =', files[i]))
   df <- read_parquet(files[i])
@@ -166,7 +166,7 @@ for(i in 1:length(files)){
   
   # 6) Export median VeDBA per second - continous file
   colnames(df_Ved_1Hz) <- c("timestamp", "vedba", "logvedba")
-  savename_vedba_standard <- paste0(outdir,'VeDBA_cont/',basenames[i],'_VeDBA_standard.parquet')
+  savename_vedba_standard <- paste0(outdir,'VeDBA_cont/',basenames[i],'_vedba_standard.parquet')
   write_parquet(df_Ved_1Hz, savename_vedba_standard)
   
   #####################################################################################################################################
