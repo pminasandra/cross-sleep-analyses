@@ -54,13 +54,13 @@ get_inactive_periods <- function(dat, time_win, logvedba_thresh, make_plot = F, 
   inactive_periods$start_row <- inactive_periods$start_row + floor(win/2)
   inactive_periods$end_row <- inactive_periods$end_row - floor(win/2)
   
+  #remove any negative or zero length durations (created due to the window adjustment at the end)
+  inactive_periods <- inactive_periods[which(inactive_periods$end_row > inactive_periods$start_row),]
+  
   inactive_periods$start_time_UTC <- dat$timestamp[inactive_periods$start_row]
   inactive_periods$end_time_UTC <- dat$timestamp[inactive_periods$end_row]
   inactive_periods$duration_hr <- as.numeric(difftime(inactive_periods$end_time_UTC, inactive_periods$start_time_UTC, units = 'hours'))
     
-  #remove any negative or zero length durations (created due to the window adjustment at the end)
-  inactive_periods <- inactive_periods[which(inactive_periods$duration_hr > 0),]
-  
   #make plot
   if(make_plot){
 
