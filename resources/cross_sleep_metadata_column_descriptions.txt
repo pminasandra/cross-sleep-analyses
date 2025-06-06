@@ -1,0 +1,15 @@
+deployment_ID        : Unique deployment identifier  
+individual_ID        : Unique individual identifier  
+tag_onset_UTC        : Start time of the recorded data in format YYYY_MM_DD hh mm ss.fff (UTC)  
+tag_offset_UTC       : End time of the recorded data in format YYYY_MM_DD hh mm ss.fff (UTC)  
+age                  : Age of the individual  
+sex                  : Sex of the individual  
+dominance_status     : Dominance status (rank); e.g., 0, 1, 2, 3 for species like hyenas, or 0 and 1 for species with only dominant vs. non-dominant individuals  
+group_ID             : Unique group identifier  
+species              : Latin name of the species (Genus+species)  
+local_sunrise_time   : Local sunrise time calculated based on deployment date and location  
+local_sunset_time    : Local sunset time calculated based on deployment date and location  
+timezone             : Time zone offset from UTC (e.g., 3 for UTC+3)  
+location_lon         : Longitude of the study location  
+location_lat         : Latitude of the study location  
+
