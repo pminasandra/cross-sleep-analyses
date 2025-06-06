@@ -48,7 +48,7 @@ metadata <- read.csv(metadata_path)
 # ==== Perform automatic threshold computation and compare to manual ============
 
 # Path to VeDBA data (parquet format); continuous or lowest burst interval preffered
-parquet_path <- "/mnt/EAS_shared/cross_sleep/working/Data/VeDBA/hyena_2016_BORA_vedba_standard.parquet"
+parquet_path <- "/mnt/EAS_shared/cross_sleep/working/Data/VeDBA/baboon_4707657037_14556_vedba_standard.parquet"
 
 # Run custom function to compute thresholds using GMM (Gaussian Mixture Model)
 # `thres_value` is the lower quantile used as a baseline; `k` is number of GMM components
@@ -63,33 +63,35 @@ first_result <- result %>%
   select(species, deployment_ID, individual_ID, automatic_th, automatic_th2)
 
 # Add columns if they don’t exist yet
-if (!"automatic_th" %in% names(metadata)) {
-  metadata$automatic_th <- NA_real_
-}
-if (!"automatic_th2" %in% names(metadata)) {
-  metadata$automatic_th2 <- NA_real_
-}
-
-# Option 1: Manually update only the matching row in metadata
-metadata <- metadata %>%
-  mutate(
-    automatic_th = if_else(
-      species == first_result$species &
-        deployment_ID == first_result$deployment_ID &
-        individual_ID == first_result$individual_ID,
-      first_result$automatic_th,
-      automatic_th  # keep original
-    ),
-    automatic_th2 = if_else(
-      species == first_result$species &
-        deployment_ID == first_result$deployment_ID &
-        individual_ID == first_result$individual_ID,
-      first_result$automatic_th2,
-      automatic_th2
+{
+  if (!"automatic_th" %in% names(metadata)) {
+    metadata$automatic_th <- NA_real_
+  }
+  if (!"automatic_th2" %in% names(metadata)) {
+    metadata$automatic_th2 <- NA_real_
+  }
+  
+  # Option 1: Manually update only the matching row in metadata
+  metadata <- metadata %>%
+    mutate(
+      automatic_th = if_else(
+        species == first_result$species &
+          deployment_ID == first_result$deployment_ID &
+          individual_ID == first_result$individual_ID,
+        first_result$automatic_th,
+        automatic_th  # keep original
+      ),
+      automatic_th2 = if_else(
+        species == first_result$species &
+          deployment_ID == first_result$deployment_ID &
+          individual_ID == first_result$individual_ID,
+        first_result$automatic_th2,
+        automatic_th2
+      )
     )
-  )
-# Print updated metadata to console for verification
-print(metadata)
+  # Print updated metadata to console for verification
+  print(metadata) }
+
 # ==== Write full result table to file ==========================================
 
 # Construct output filename using subject identifiers from result
