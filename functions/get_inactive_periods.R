@@ -45,19 +45,22 @@ get_inactive_periods <- function(dat, time_win, logvedba_thresh, make_plot = F, 
   #get contiguous segments of inactivity
   runs <- rle(dat$active_smoothed)
   runs$starts <- cumsum(runs$lengths)
-  starts <- c(1,runs$starts[1:length(runs$starts)-1])
-  ends <- runs$starts-1
+  starts <- c(1,runs$starts[1:length(runs$starts)-1]+1)
+  ends <- c(starts[2:length(starts)]-1, runs$starts[length(runs$starts)])
   segments <- data.frame(start_row = starts, end_row = ends, state = runs$values)
   inactive_periods <- segments[which(segments$state==F),]
     
   #remove half a window length on either side
   inactive_periods$start_row <- inactive_periods$start_row + floor(win/2)
   inactive_periods$end_row <- inactive_periods$end_row - floor(win/2)
-    
+  
   inactive_periods$start_time_UTC <- dat$timestamp[inactive_periods$start_row]
   inactive_periods$end_time_UTC <- dat$timestamp[inactive_periods$end_row]
   inactive_periods$duration_hr <- as.numeric(difftime(inactive_periods$end_time_UTC, inactive_periods$start_time_UTC, units = 'hours'))
     
+  #remove any negative or zero length durations (created due to the window adjustment at the end)
+  inactive_periods <- inactive_periods[which(inactive_periods$duration_hr > 0),]
+  
   #make plot
   if(make_plot){
 
@@ -68,9 +71,9 @@ get_inactive_periods <- function(dat, time_win, logvedba_thresh, make_plot = F, 
     for(p in 1:length(plot_start_intervals)){
       idxs <- plot_start_intervals[p]:(plot_start_intervals[p] + floor(24*60*60*2/dt))
       plot(NULL, xlab='',ylab='',xaxt='n',yaxt='n',xlim=c(min(idxs),max(idxs)),ylim=c(0,1))
-      abline(v = idxs[which(!dat$active[idxs])], col = '#00000055',lwd=.1)
-      abline(v = idxs[which(dat$active[idxs])], col = '#00FF0055',lwd=.1)
-      abline(v = which(diff(as.Date(dat$timestamp))==1)+1, col = 'black',lwd=2,lty=2) #midnight UTC
+      abline(v = idxs[which(!dat$active[idxs])], col = 'gray',lwd=.1)
+      abline(v = idxs[which(dat$active[idxs])], col = '#00AA00',lwd=.1)
+      abline(v = which(diff(as.Date(dat$timestamp))==1)+1, col = 'yellow',lwd=2,lty=2) #midnight UTC
       if(nrow(inactive_periods)>0){
         arrows(inactive_periods$start_row, rep(.5, nrow(inactive_periods)), inactive_periods$end_row, rep(.5, nrow(inactive_periods)), length = .4, col = 'red',lwd=3, code = 3, angle = 90)
       }
