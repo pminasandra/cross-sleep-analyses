@@ -22,11 +22,18 @@ func_files <- list.files(func_folder, pattern = "\\.R$", full.names = TRUE)
 # Source each function file to load them into the current R session
 sapply(func_files, source)
 
-# ==== Load metadata (selecting most recent version based on date in filename) ===
+# ==== Set directories ===================
 
-# Define folder where metadata CSV files are stored
-metadata_folder <- "/mnt/EAS_shared/cross_sleep/working/Data/"
+fig_output_folder <- "/mnt/EAS_shared/cross_sleep/working/Figures/thresholds/"
+ths_table_output_folder <- "/mnt/EAS_shared/cross_sleep/working/Data/thresholds/"
+metadata_folder <- "/mnt/EAS_shared/cross_sleep/working/Data/" # Define folder where metadata CSV file(s) are stored
 
+# ==== Perform automatic threshold computation and compare to manual ============
+
+# Path to VeDBA data (parquet format); continuous or lowest burst interval preffered
+parquet_path <- "/mnt/EAS_shared/cross_sleep/working/Data/VeDBA/hyena_2016_BORA_vedba_standard.parquet"
+
+# ==== Load metadata (Ensure selecting most recent version based on date in filename) ===
 # List all metadata files matching naming convention with a date suffix
 meta_files <- list.files(metadata_folder, 
                          pattern = "^cross_sleep_metadata_\\d{4}-\\d{2}-\\d{2}\\.csv$", 
@@ -36,19 +43,8 @@ dates <- as.Date(stringr::str_extract(meta_files, "\\d{4}-\\d{2}-\\d{2}"))
 # Identify the most recent metadata file based on the date extracted
 metadata_path <- meta_files[which.max(dates)]
 metadata_path
-
-# ==== Define output folders for figures and threshold tables ===================
-
-fig_output_folder <- "/mnt/EAS_shared/cross_sleep/working/Figures/thresholds/"
-ths_table_output_folder <- "/mnt/EAS_shared/cross_sleep/working/Data/thresholds/"
-
 # Read the selected metadata CSV into a data frame
 metadata <- read.csv(metadata_path)
-
-# ==== Perform automatic threshold computation and compare to manual ============
-
-# Path to VeDBA data (parquet format); continuous or lowest burst interval preffered
-parquet_path <- "/mnt/EAS_shared/cross_sleep/working/Data/VeDBA/baboon_4707657037_14556_vedba_standard.parquet"
 
 # Run custom function to compute thresholds using GMM (Gaussian Mixture Model)
 # `thres_value` is the lower quantile used as a baseline; `k` is number of GMM components
