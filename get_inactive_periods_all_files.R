@@ -5,10 +5,10 @@ library(arrow)
 
 #----PARAMS----
 time_win <- 60*60 #time window in seconds 
-manual_set_thresh <- -2.5 #logvedba threshold to use (if NULL, this will be pulled from metadata table)
+manual_set_thresh <- NULL #logvedba threshold to use (if NULL, this will be pulled from metadata table)
 start_hour_UTC <- 11 #hour (in UTC) to use as the start of the window (should be somewhere in the middle of the 'active period')
 make_plots <- T #T or F, whether to make plots
-species_to_use <- 'meerkat' #can be hyena, meerkat, spidermonkey, or hyrax -or can be NULL and all files in the folder are used
+species_to_use <- 'spidermonkey' #can be hyena, meerkat, spidermonkey, or hyrax -or can be NULL and all files in the folder are used
 min_dur_to_plot <- 3
 
 #directories and files

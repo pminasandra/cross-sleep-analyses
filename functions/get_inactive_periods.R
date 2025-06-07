@@ -39,7 +39,7 @@ get_inactive_periods <- function(dat, time_win, logvedba_thresh, make_plot = F, 
   
   #rolling mean at two different resolutions
   smooth_mean <- zoo::rollmean(dat$active, k = win, align = 'center', fill = NA, na.rm=T)
-  smooth_mean2 <- zoo::rollmean(dat$active, k = win/4, align = 'center', fill = NA, na.rm=T)
+  smooth_mean2 <- zoo::rollmean(dat$active, k = ceiling(win/4), align = 'center', fill = NA, na.rm=T)
 
   #take majority state
   dat$active_smoothed <- smooth_mean > 0.5
