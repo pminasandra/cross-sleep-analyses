@@ -9,6 +9,7 @@ manual_set_thresh <- -2.5 #logvedba threshold to use (if NULL, this will be pull
 start_hour_UTC <- 11 #hour (in UTC) to use as the start of the window (should be somewhere in the middle of the 'active period')
 make_plots <- T #T or F, whether to make plots
 species_to_use <- 'meerkat' #can be hyena, meerkat, spidermonkey, or hyrax -or can be NULL and all files in the folder are used
+min_dur_to_plot <- 3
 
 #directories and files
 datadir <- '~/EAS_shared/cross_sleep/working/Data/'
@@ -43,7 +44,7 @@ for(f in 1:length(files)){
   
   #get threshold from metadata file if needed (or set manually)
   if(is.null(manual_set_thresh)){
-    metadata <- read.csv(metadata_file)
+    metadata <- read.csv(paste0(datadir,metadata_file))
     row <- which(metadata$individual_ID==ind_id & metadata$deployment_ID==deploy_id & metadata$species==species)
     metadata_ind <- metadata[row,]
     thresh <- metadata_ind$th1
@@ -63,7 +64,8 @@ for(f in 1:length(files)){
                                                 time_win = time_win,
                                                 logvedba_thresh = thresh,
                                                 make_plot = make_plots,
-                                                plot_savepath = plot_savepath)
+                                                plot_savepath = plot_savepath,
+                                                min_dur_to_plot = min_dur_to_plot)
   
   inactive_periods_file$filename <- filename
   inactive_periods_file$species <- species
