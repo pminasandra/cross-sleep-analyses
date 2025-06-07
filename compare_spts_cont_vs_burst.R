@@ -1,5 +1,5 @@
 #Compare inactive intervals across burst lengths
-
+library(lubridate)
 #directory where inactivity periods / SPT data are stored
 dir <- '~/EAS_shared/cross_sleep/working/Data/inactive_periods'
 
