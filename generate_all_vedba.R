@@ -59,6 +59,18 @@ run_and_save_burst_data <- function(filename, savename, burst_interval, burst_le
   # Set values to NA where fracNA >= 0.5
   df_burst[fracNA >= fracNA_thresh, (non_time_cols) := lapply(.SD, function(x) NA), .SDcols = non_time_cols]
   
+  # Optional - add tiny value to VeDBA values that are exactly 0 (so logvedba does not become Inf!)
+  # Use a small fraction (e.g., 1/100) of the minimum non-zero VeDBA in the dataset:
+  min_nonzero <- min(df_burst$VeDBA[df_burst$VeDBA > 0], na.rm = TRUE)
+  epsilon <- min_nonzero / 100  
+  df_burst[VeDBA == 0, VeDBA := epsilon]
+  # Diagnostic Message as a Percentage
+  num_zero <- sum(df_burst$VeDBA == epsilon, na.rm = TRUE) # Count how many VeDBA values were replaced
+  total_valid <- sum(!is.na(df_burst$VeDBA)) # Total number of valid (non-NA) VeDBA values
+  percent_zero <- round(100 * num_zero / total_valid, 3) # Percentage based on valid VeDBA entries only
+  
+  cat(paste("Replaced", num_zero, "VeDBA=0 values with epsilon (", percent_zero, "% of valid VeDBA rows)\n"))
+  
   # Log-transform VeDBA
   df_burst[, log_VeDBA := log(VeDBA)]
   
@@ -130,6 +142,13 @@ for(i in 1:length(files)){
   print("Getting standardized acc data")
   df_stand$Timestamp = df_stand$Timestamp_adj ; df_stand$Timestamp_adj = NULL
   
+  # Remove any possible duplicated timestamps
+  # Identify duplicated rows only once
+  dupes_logical <- duplicated(df_stand$Timestamp)
+  num_duplicates <- sum(dupes_logical) # Count and remove them
+  df_stand <- df_stand[!dupes_logical]
+  message("Removed ", num_duplicates, " duplicated timestamps") # Message
+  
   # Write standarsised data as parquet file
   savename_standard <- paste0(outdir, 'Acc_standard/',basenames[i],'_standard.parquet')
   write_parquet(df_stand, savename_standard)
@@ -148,6 +167,18 @@ for(i in 1:length(files)){
   # Set values to NA where fracNA >= 0.5
   df_Ved[fracNA >= fracNA_thresh, (non_time_cols) := lapply(.SD, function(x) NA), .SDcols = non_time_cols]
   
+  # 3c) Optional - add tiny value to VeDBA values that are exactly 0 (so logvedba does not become Inf!)
+  # Use a small fraction (e.g., 1/100) of the minimum non-zero VeDBA in the dataset:
+  min_nonzero <- min(df_Ved$VeDBA[df_Ved$VeDBA > 0], na.rm = TRUE)
+  epsilon <- min_nonzero / 100  
+  df_Ved[VeDBA == 0, VeDBA := epsilon]
+  # Diagnostic Message as a Percentage
+  num_zero <- sum(df_Ved$VeDBA == epsilon, na.rm = TRUE) # Count how many VeDBA values were replaced
+  total_valid <- sum(!is.na(df_Ved$VeDBA)) # Total number of valid (non-NA) VeDBA values
+  percent_zero <- round(100 * num_zero / total_valid, 3) # Percentage based on valid VeDBA entries only
+  
+  cat(paste("Replaced", num_zero, "VeDBA=0 values with epsilon (", percent_zero, "% of valid VeDBA rows)\n"))
+
   # 4) Log-transform VeDBA
   df_Ved[, log_VeDBA := log(VeDBA)]
   
