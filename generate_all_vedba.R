@@ -55,7 +55,7 @@ run_and_save_burst_data <- function(filename, savename, burst_interval, burst_le
   # Optional - remove VeDBA values if fracNA >= 50 % #Arbitrary!
   # Identify non-POSIXct columns (i.e., not Timestamp)
   non_time_cols <- names(df_burst)[!sapply(df_burst, inherits, what = "POSIXct")]
-  non_time_cols = subset(non_time_cols, non_time_cols != "fracNA") # Keep value in this column to aid diagnostics
+  non_time_cols <- subset(non_time_cols, !non_time_cols %in% c("fracNA", "Burst_ID")) # Keep values in these columns
   # Set values to NA where fracNA >= 0.5
   df_burst[fracNA >= fracNA_thresh, (non_time_cols) := lapply(.SD, function(x) NA), .SDcols = non_time_cols]
   
